@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 import requests
 import concurrent.futures
+from collections import Counter
 from bs4 import BeautifulSoup
 from progressbar import progressbar
 
@@ -130,7 +131,7 @@ def find_word_paths_html_file(filename):
 def is_valid_html_file(filename):
     """File is valid if it contains definitions and was saved using the word_path as its name.
     """
-    soup = read_html(filename)
+    soup = read_html_file(filename)
     definitions = find_definitions(soup)
     if definitions and (filename == find_orig_word_path(soup)):
         return filename, True
@@ -175,3 +176,34 @@ def get_explored_links(num_threads=32):
         links.extend(res['links'])
     
     return links
+
+
+def name_and_class(tag):
+    try:
+        classes = tuple(sorted(tag['class']))
+    except:
+        classes = None
+    return tag.name, classes
+
+
+def find_all_parents(definition_tag):
+    parents = []
+    tag_i = definition_tag
+    name, classes = name_and_class(tag_i)
+    while True:
+        parents.append((name, classes))
+        tag_i = tag_i.parent
+        name, classes = name_and_class(tag_i)
+        if name == 'div' and classes == ('b',):
+            break
+    return tuple(parents[::-1])
+
+
+def tag_parent_counter(filename):
+    """Find all tags with their parents up to <div class='b'>.
+    """
+    cnt = Counter()
+    definitions = find_definitions(read_html_file(filename))
+    for def_tag in definitions:
+        cnt.update([find_all_parents(t)  for t in def_tag.find_all()])
+    return cnt
