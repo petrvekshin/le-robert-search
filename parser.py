@@ -207,3 +207,33 @@ def tag_parent_counter(filename):
     for def_tag in definitions:
         cnt.update([find_all_parents(t)  for t in def_tag.find_all()])
     return cnt
+
+
+def get_content(tag, indices):
+    """Get content by indices: tag.content[ind_0].content[ind_1]...
+    """
+    res = tag
+    for ind in indices:
+        res = res.contents[ind]
+    return res
+
+
+def locate_strings(tag):
+    """Find all strings in a tag and return them along with their parents and content indices.
+    """
+    strings = []
+    for string in tag.find_all(string=True):
+        tag_iter = string
+        parents = []
+        indices = []
+        indices.append(len(list(tag_iter.previous_siblings)))
+        while True:
+            tag_iter = tag_iter.parent
+            name, classes = name_and_class(tag_iter)
+            if tag_iter == tag:
+                break
+            parents.append((name, classes))
+            indices.append(len(list(tag_iter.previous_siblings)))
+        strings.append({'string': string, 'parents': tuple(parents[::-1]), 'indices': tuple(indices[::-1])})
+
+    return strings
