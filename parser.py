@@ -250,4 +250,6 @@ def index_strings_by_parents(filename):
         strings = locate_strings(def_tag)
         for string in strings:
             parents[string['parents']][def_ind].append(string['indices'])
-    return filename, parents
+    for key in parents:
+        parents[key] = dict(parents[key])
+    return filename, dict(parents)
