@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 import requests
 import concurrent.futures
-from collections import Counter
+from collections import Counter, defaultdict
 from bs4 import BeautifulSoup
 from progressbar import progressbar
 
@@ -96,7 +96,7 @@ def list_html_files():
 
 
 def find_definitions(soup):
-    """Find 'Définition de ...' tags .
+    """Find 'Définition de ...' tags: <div class='b'>.
     """
     main_tag = soup.body.find('div', class_='ws-c', recursive=False).main
     section_with_definitions = main_tag.find('section', class_='def', recursive=False)
@@ -219,10 +219,12 @@ def get_content(tag, indices):
 
 
 def locate_strings(tag):
-    """Find all strings in a tag and return them along with their parents and content indices.
+    """Find all strings except '\n' in a tag and return them along with their parents and content indices.
     """
     strings = []
     for string in tag.find_all(string=True):
+        if string == '\n':
+            continue
         tag_iter = string
         parents = []
         indices = []
@@ -237,3 +239,15 @@ def locate_strings(tag):
         strings.append({'string': string, 'parents': tuple(parents[::-1]), 'indices': tuple(indices[::-1])})
 
     return strings
+
+
+def index_strings_by_parents(filename):
+    """Using parents as keys, return indices needed to locate a string with such parents.
+    """
+    definitions = find_definitions(read_html_file(filename))
+    parents = defaultdict(lambda: defaultdict(lambda: []))
+    for def_ind, def_tag in enumerate(definitions):
+        strings = locate_strings(def_tag)
+        for string in strings:
+            parents[string['parents']][def_ind].append(string['indices'])
+    return filename, parents
