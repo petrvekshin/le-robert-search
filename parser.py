@@ -179,24 +179,14 @@ def get_explored_links(num_threads=32):
 
 
 def name_and_class(tag):
+    """Return name and class of a tag as strings.
+    """
     try:
-        classes = tuple(sorted(tag['class']))
+        # inside <div class="b"> all tags contain no more than one class
+        classes = ' '.join(tag['class'])
     except:
         classes = None
     return tag.name, classes
-
-
-def find_all_parents(definition_tag):
-    parents = []
-    tag_i = definition_tag
-    name, classes = name_and_class(tag_i)
-    while True:
-        parents.append((name, classes))
-        tag_i = tag_i.parent
-        name, classes = name_and_class(tag_i)
-        if name == 'div' and classes == ('b',):
-            break
-    return tuple(parents[::-1])
 
 
 def tag_parent_counter(filename):
