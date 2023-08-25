@@ -11,14 +11,18 @@ HTML_PATH = './html/'
 AUDIO_PATH = './audio/'
 
 
-def run_threads(function, sequence, num_threads=32, *args, **kwargs):
-    """Run a threaded function that takes an argument from a sequence and args and/or kwargs optionally. 
+def execute_async(function, sequence, executor_type='thread', batch_size=64, max_workers=None, *args, **kwargs):
+    """Asynchronously execute a function that takes an argument from a sequence and args and/or kwargs optionally. 
     """
     results = []
-    for i in progressbar(range(0, len(sequence), num_threads)):
-        current_items = sequence[i:i+num_threads]
-        with concurrent.futures.ThreadPoolExecutor() as executor:
-            futures = [executor.submit(function, item, *args, **kwargs) for item in current_items]
+    for i in progressbar(range(0, len(sequence), batch_size)):
+        current_items = sequence[i:i+batch_size]
+        if executor_type == 'process':
+            with concurrent.futures.ProcessPoolExecutor(max_workers=max_workers) as executor:
+                futures = [executor.submit(function, item, *args, **kwargs) for item in current_items]
+        else:
+            with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+                futures = [executor.submit(function, item, *args, **kwargs) for item in current_items]
         for ft in futures:
             results.append(ft.result())
     return results
@@ -146,7 +150,7 @@ def get_suggested_word_paths(search_term):
     return set(item['page'][12:] for item in suggestions if item['type'] == 'def')
 
 
-def get_explored_links(num_threads=32):
+def get_explored_links():
     """Return all definition links found in "Explorer le dictionnaire" section.
     """
     links = []
@@ -164,14 +168,14 @@ def get_explored_links(num_threads=32):
     
     # parsing first pages
     first_chars = '0ABCDEFGHIJKLMNOPQRSTUVWXYZ'
-    results = run_threads(get_links_on_page, first_chars, num_threads=num_threads, get_last_page_number=True)
+    results = execute_async(get_links_on_page, first_chars, get_last_page_number=True)
     for res in results:
         links.extend(res['links'])
         for num in range(2, int(res['last_page'])+1):
             page_ids.append(f"{res['page_id']}/{num}")
     
     # parsing remaining pages
-    results = run_threads(get_links_on_page, page_ids, num_threads=num_threads)
+    results = execute_async(get_links_on_page, page_ids)
     for res in results:
         links.extend(res['links'])
     
