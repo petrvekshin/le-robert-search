@@ -7,17 +7,13 @@ from bs4 import BeautifulSoup
 from progressbar import progressbar
 
 
-HTML_PATH = './html/'
-AUDIO_PATH = './audio/'
-
-
-def execute_async(function, sequence, executor_type='thread', batch_size=64, max_workers=None, *args, **kwargs):
+def execute_async(function, sequence, processes=False, batch_size=64, max_workers=None, *args, **kwargs):
     """Asynchronously execute a function that takes an argument from a sequence and args and/or kwargs optionally. 
     """
     results = []
     for i in progressbar(range(0, len(sequence), batch_size)):
         current_items = sequence[i:i+batch_size]
-        if executor_type == 'process':
+        if processes:
             with concurrent.futures.ProcessPoolExecutor(max_workers=max_workers) as executor:
                 futures = [executor.submit(function, item, *args, **kwargs) for item in current_items]
         else:
@@ -28,7 +24,7 @@ def execute_async(function, sequence, executor_type='thread', batch_size=64, max
     return results
 
 
-def download_html(word_path):
+def download_html(word_path, html_path='./html/'):
     """Download HTML of a definition page ending in word_path (word).
     """
     response = requests.get(f'https://dictionnaire.lerobert.com/definition/{word_path}')
@@ -38,7 +34,7 @@ def download_html(word_path):
     content = response.text
     soup = BeautifulSoup(content, 'lxml')
     response_word_path = response.url.split('/')[-1] # if redirected
-    filename_path = Path(HTML_PATH) / Path(f'{response_word_path}.html')
+    filename_path = Path(html_path) / Path(f'{response_word_path}.html')
     definitions = find_definitions(soup)
     if not definitions:
         return {'word_path': word_path, 'status_code': status_code, 'def_exists': False}
@@ -47,16 +43,16 @@ def download_html(word_path):
     return {'word_path': word_path, 'status_code': status_code, 'def_exists': True}
 
 
-def read_html_file(filename):
+def read_html_file(filename, html_path='./html/'):
     """Read a saved version of HTML using filename (word_path) and return a soup object.
     """
-    filename_path = Path(HTML_PATH) / Path(f'{filename}.html')
+    filename_path = Path(html_path) / Path(f'{filename}.html')
     with open(filename_path, 'r', encoding='utf-8') as f:
         content = ''.join(f.readlines())
     return BeautifulSoup(content, 'lxml')
 
 
-def download_audio(html_filename):
+def download_audio(html_filename, audio_path='./audio/'):
     """Download all audio files found in the definition section of an HTML file.
     """
     soup = read_html_file(html_filename)
@@ -81,7 +77,7 @@ def download_audio(html_filename):
             filename = audio_link[len(src_prefix):]
         else:
             filename = audio_link.replace('/', '_')
-        filename_path = Path(AUDIO_PATH)  / Path(filename)
+        filename_path = Path(audio_path)  / Path(filename)
         if os.path.isfile(filename_path):
             continue
             
@@ -93,10 +89,10 @@ def download_audio(html_filename):
     return html_filename, True
 
 
-def list_html_files():
+def list_html_files(html_path='./html/'):
     """Return a list of saved HTML files (filenames without extensions).
     """
-    return [item[:-5] for item in os.listdir(HTML_PATH)]
+    return [item[:-5] for item in os.listdir(html_path)]
 
 
 def find_definitions(soup):
