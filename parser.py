@@ -24,7 +24,7 @@ def execute_async(function, sequence, processes=False, batch_size=64, max_worker
     return results
 
 
-def download_html(word_path, html_path='./html/'):
+def download_html(word_path, html_path='./assets/html/'):
     """Download HTML of a definition page ending in word_path (word).
     """
     response = requests.get(f'https://dictionnaire.lerobert.com/definition/{word_path}')
@@ -43,7 +43,7 @@ def download_html(word_path, html_path='./html/'):
     return {'word_path': word_path, 'status_code': status_code, 'def_exists': True}
 
 
-def read_html_file(filename, html_path='./html/'):
+def read_html_file(filename, html_path='./assets/html/'):
     """Read a saved version of HTML using filename (word_path) and return a soup object.
     """
     filename_path = Path(html_path) / Path(f'{filename}.html')
@@ -52,10 +52,10 @@ def read_html_file(filename, html_path='./html/'):
     return BeautifulSoup(content, 'lxml')
 
 
-def download_audio(html_filename, audio_path='./audio/'):
+def download_audio(html_filename, html_path='./assets/html/', audio_path='./assets/mp3/'):
     """Download all audio files found in the definition section of an HTML file.
     """
-    soup = read_html_file(html_filename)
+    soup = read_html_file(html_filename, html_path=html_path)
     definitions = find_definitions(soup)
     
     src_prefix = '/medias/SOUNDS/originals/mp3/'
@@ -89,7 +89,7 @@ def download_audio(html_filename, audio_path='./audio/'):
     return html_filename, True
 
 
-def list_html_files(html_path='./html/'):
+def list_html_files(html_path='./assets/html/'):
     """Return a list of saved HTML files (filenames without extensions).
     """
     return [item[:-5] for item in os.listdir(html_path)]
@@ -113,10 +113,10 @@ def find_orig_word_path(soup):
         return None
 
     
-def find_word_paths_html_file(filename):
+def find_word_paths_html_file(filename, html_path='./assets/html/'):
     """Find all definition links on a page and return their word_paths.
     """
-    soup = read_html_file(filename)
+    soup = read_html_file(filename, html_path=html_path)
     links = soup.find_all('a')
     word_paths = set()
     for a in links:
@@ -128,10 +128,10 @@ def find_word_paths_html_file(filename):
     return word_paths    
     
     
-def is_valid_html_file(filename):
+def is_valid_html_file(filename, html_path='./assets/html/'):
     """File is valid if it contains definitions and was saved using the word_path as its name.
     """
-    soup = read_html_file(filename)
+    soup = read_html_file(filename, html_path=html_path)
     definitions = find_definitions(soup)
     if definitions and (filename == find_orig_word_path(soup)):
         return filename, True
@@ -189,11 +189,11 @@ def name_and_class(tag):
     return tag.name, classes
 
 
-def tag_parent_counter(filename):
+def tag_parent_counter(filename, html_path='./assets/html/'):
     """Find all tags with their parents up to <div class='b'>.
     """
     cnt = Counter()
-    definitions = find_definitions(read_html_file(filename))
+    definitions = find_definitions(read_html_file(filename, html_path=html_path))
     for def_tag in definitions:
         cnt.update([find_all_parents(t)  for t in def_tag.find_all()])
     return cnt
@@ -231,10 +231,10 @@ def locate_strings(tag):
     return strings
 
 
-def index_strings_by_parents(filename):
+def index_strings_by_parents(filename, html_path='./assets/html/'):
     """Using parents as keys, return indices needed to locate a string with such parents.
     """
-    definitions = find_definitions(read_html_file(filename))
+    definitions = find_definitions(read_html_file(filename, html_path=html_path))
     parents = defaultdict(lambda: defaultdict(lambda: []))
     for def_ind, def_tag in enumerate(definitions):
         strings = locate_strings(def_tag)
