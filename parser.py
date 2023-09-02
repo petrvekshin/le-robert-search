@@ -24,72 +24,80 @@ def execute_async(function, sequence, processes=False, batch_size=64, max_worker
     return results
 
 
-def download_html(word_path, html_path='./assets/html/'):
+def download_html(word_path, html_path='./assets/html/original/', rewrite=False):
     """Download HTML of a definition page ending in word_path (word).
     """
+    if os.path.isfile(Path(html_path) / Path(f'{word_path}.html')) and not rewrite:
+        return {'word_path': word_path, 'status_code': None, 'def_exists': True}
+    
     response = requests.get(f'https://dictionnaire.lerobert.com/definition/{word_path}')
     status_code = response.status_code
     if status_code != 200:
         return {'word_path': word_path, 'status_code': status_code, 'def_exists': False}
     content = response.text
-    soup = BeautifulSoup(content, 'lxml')
-    response_word_path = response.url.split('/')[-1] # if redirected
-    filename_path = Path(html_path) / Path(f'{response_word_path}.html')
+    soup = BeautifulSoup(content, 'html.parser')
     definitions = find_definitions(soup)
     if not definitions:
         return {'word_path': word_path, 'status_code': status_code, 'def_exists': False}
+    response_word_path = response.url.split('/')[-1] # if redirected
+    filename_path = Path(html_path) / Path(f'{response_word_path}.html')
+    os.makedirs(html_path, exist_ok=True)
     with open(filename_path, 'w', encoding='utf-8') as f:
         f.write(content)
     return {'word_path': word_path, 'status_code': status_code, 'def_exists': True}
 
 
-def read_html_file(filename, html_path='./assets/html/'):
+def read_html_file(filename, html_path='./assets/html/original/'):
     """Read a saved version of HTML using filename (word_path) and return a soup object.
     """
     filename_path = Path(html_path) / Path(f'{filename}.html')
     with open(filename_path, 'r', encoding='utf-8') as f:
         content = ''.join(f.readlines())
-    return BeautifulSoup(content, 'lxml')
+    return BeautifulSoup(content, 'html.parser')
 
 
-def download_audio(html_filename, html_path='./assets/html/', audio_path='./assets/mp3/'):
-    """Download all audio files found in the definition section of an HTML file.
+def download_media(html_filename, 
+                   audio=True,
+                   images=True,
+                   html_path='./assets/html/original/', 
+                   audio_path='./assets/audio/', 
+                   image_path='./assets/images/thumbnails/'):
+    """Download all media files of specified type found in the definition section of an HTML file.
     """
+    if not (audio or images):
+        return
+    
     soup = read_html_file(html_filename, html_path=html_path)
     definitions = find_definitions(soup)
-    
-    src_prefix = '/medias/SOUNDS/originals/mp3/'
     url_prefix = 'https://dictionnaire.lerobert.com'
     
-    audio_sources = []
-    for definition in definitions:
-        audio_sources.extend([audio for audio in definition.find_all('source', recursive=True)])
-
-    if not audio_sources:
-        return html_filename, False
+    def download_src(media_path, src_prefix, tag):
+        os.makedirs(media_path, exist_ok=True)
+        links = set()
+        for definition in definitions:
+            links.update([t['src'] for t in definition.find_all(tag, recursive=True)])
+        for link in links:
+            if link.startswith(src_prefix):
+                filename = link[len(src_prefix):]
+            else:
+                filename = link.replace('/', '_')
+            filename_path = Path(media_path)  / Path(filename)
+            if os.path.isfile(filename_path):
+                continue
+            response = requests.get(url_prefix + link)
+            with open(filename_path, 'wb') as f:
+                f.write(response.content)
     
-    audio_links = set()
-    for s in audio_sources:
-        audio_links.add(s['src'])
+    if audio:
+        download_src(audio_path, '/medias/SOUNDS/originals/mp3/', 'source')
 
-    for audio_link in audio_links:
-        if (len(audio_link) > len(src_prefix)) and (audio_link[:len(src_prefix)] == src_prefix):
-            filename = audio_link[len(src_prefix):]
-        else:
-            filename = audio_link.replace('/', '_')
-        filename_path = Path(audio_path)  / Path(filename)
-        if os.path.isfile(filename_path):
-            continue
-            
-        url = url_prefix + audio_link
-        response = requests.get(url)
-        with open(filename_path, 'wb') as f:
-            f.write(response.content)
-            
-    return html_filename, True
+    if images:
+        download_src(image_path, '/medias/IMAGES/originals/thumbnails/', 'img')
+
+    return
 
 
-def list_html_files(html_path='./assets/html/'):
+def list_html_files(html_path='./assets/html/original/'):
     """Return a list of saved HTML files (filenames without extensions).
     """
     return [item[:-5] for item in os.listdir(html_path)]
@@ -113,7 +121,7 @@ def find_orig_word_path(soup):
         return None
 
     
-def find_word_paths_html_file(filename, html_path='./assets/html/'):
+def find_word_paths_html_file(filename, html_path='./assets/html/original/'):
     """Find all definition links on a page and return their word_paths.
     """
     soup = read_html_file(filename, html_path=html_path)
@@ -128,7 +136,7 @@ def find_word_paths_html_file(filename, html_path='./assets/html/'):
     return word_paths    
     
     
-def is_valid_html_file(filename, html_path='./assets/html/'):
+def is_valid_html_file(filename, html_path='./assets/html/original/'):
     """File is valid if it contains definitions and was saved using the word_path as its name.
     """
     soup = read_html_file(filename, html_path=html_path)
@@ -154,7 +162,7 @@ def get_explored_links():
     
     def get_links_on_page(page_id, get_last_page_number=False):
         content = requests.get(f'https://dictionnaire.lerobert.com/explore/def/{page_id}').text
-        section_div = BeautifulSoup(content, 'lxml').find('section', class_='def').div
+        section_div = BeautifulSoup(content, 'html.parser').find('section', class_='def').div
         if get_last_page_number:
             last_page = section_div.find('div', class_='p', recursive=False).find_all('a', recursive=False)[-1].text
         else:
@@ -189,7 +197,7 @@ def name_and_class(tag):
     return tag.name, classes
 
 
-def tag_parent_counter(filename, html_path='./assets/html/'):
+def tag_parent_counter(filename, html_path='./assets/html/original/'):
     """Find all tags with their parents up to <div class='b'>.
     """
     cnt = Counter()
@@ -231,7 +239,7 @@ def locate_strings(tag):
     return strings
 
 
-def index_strings_by_parents(filename, html_path='./assets/html/'):
+def index_strings_by_parents(filename, html_path='./assets/html/original/'):
     """Using parents as keys, return indices needed to locate a string with such parents.
     """
     definitions = find_definitions(read_html_file(filename, html_path=html_path))
