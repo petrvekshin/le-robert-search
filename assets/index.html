@@ -87,7 +87,7 @@
             }
             .d_xpl::after {
                 content: "›";
-            }
+            }  
             #colorbar {
                 border: black;
                 border-style: solid;
@@ -167,10 +167,6 @@
                         model_index: modelIndex,
                     };
                     getDefinitions(payload);
-                    // const wordElements = document.querySelectorAll('.word');    
-                    // wordElements.forEach((element) => {
-                    //     element.addEventListener('mouseenter', handleHover);
-                    // });
                 }
             }
 
@@ -200,91 +196,13 @@
             window.addEventListener("DOMContentLoaded", function () {
                 getModels();
                 getColorbar();
-
                 const textbox = document.getElementById("textbox");
                 textbox.addEventListener("mouseup", handleTextSelection);
-
                 const modelSelect = document.getElementById("modelSelect");
                 modelSelect.addEventListener("change", handleTextSelection);
-                // modelSelect.addEventListener("change", function() {
-                //     const modelIndex = parseInt(this.value);
-                //     const payload = {
-                //         text: "",
-                //         start_index: 0,
-                //         end_index: 0,
-                //         model_index: 0,
-                //     };
-                //     getDefinitions(payload);
-                // });
-
                 document.addEventListener("click", handleLinkClick);
             });
-
-
-            // document.addEventListener('mousedown', function(event) {
-            //     var textbox = document.getElementById('textbox');
-            //     var isClickedInsideTextbox = textbox.contains(event.target);
-            //     if (!isClickedInsideTextbox) {
-            //         textbox.blur();
-            //     }
-            // });
-
-
-            // Create a function to handle the hover event
-            function handleHover(event) {
-                const targetElement = event.target;
-                const valAttribute = targetElement.getAttribute('val');
-
-                // Create a new element to display the 'val' value
-                const valDisplay = document.createElement('span');
-                valDisplay.textContent = valAttribute;
-
-                // Position the element next to the hovered tag
-                valDisplay.style.position = 'absolute';
-                valDisplay.style.left = `${targetElement.offsetLeft + targetElement.offsetWidth}px`;
-                valDisplay.style.top = `${targetElement.offsetTop}px`;
-                
-                // Append the new element to the DOM
-                document.body.appendChild(valDisplay);
-            };
-
-                // Attach the event listener to each element
-
-
-          
-            // // Step 1: Get the 'span' elements with class 'd_xpl'
-            // const spanElements = document.querySelectorAll('span.d_xpl');
-
-            // // Step 2: Iterate over the selected elements
-            // spanElements.forEach((spanElement) => {
-            //     // Step 3: Attach 'mouseover' event listener
-            //     spanElement.addEventListener('mouseover', (event) => {
-            //         // Step 4: Extract numeric part from the id
-            //         const numericId = event.target.id.match(/\d+/)[0];
-
-            //         // Step 5: Create or update tooltip element
-            //         const tooltip = document.createElement('div');
-            //         tooltip.innerText = numericId;
-            //         tooltip.classList.add('tooltip');
-            //         document.body.appendChild(tooltip);
-
-            //         // Step 6: Position the tooltip next to the 'span' element
-            //         const rect = event.target.getBoundingClientRect();
-            //         tooltip.style.top = `${rect.top}px`;
-            //         tooltip.style.left = `${rect.right + 10}px`;
-
-            //         // Step 7: Attach 'mouseout' event listener
-            //         spanElement.addEventListener('mouseout', () => {
-            //         // Hide or remove the tooltip
-            //         tooltip.parentNode.removeChild(tooltip);
-            //         });
-            //     });
-            // });
-
-
         </script>
-        
-
     </head>
     <body>
         <div id="container">

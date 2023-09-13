@@ -5,7 +5,7 @@ import os
 import json
 
 import matplotlib.pyplot as plt
-from fastapi import FastAPI, HTTPException, Response
+from fastapi import FastAPI, HTTPException
 from fastapi.responses import HTMLResponse
 from starlette.responses import FileResponse
 from pydantic import BaseModel
@@ -82,7 +82,7 @@ def generate_definitions_response(payload, tagger, tokenizer, model):
                     cos_sim = cos(selected_text_embeddings, def_embeddings[example_ind_start+example_ind]).item()
                     colors = css_color_string(cos_sim)
                     for word_tag in example_tag.find_all(True, class_='word'):
-                        word_tag['val'] = f'{cos_sim:.3f}'
+                        word_tag['title'] = f'{cos_sim:.3f}'
                         word_tag['style'] = f'background-color: {colors};'
                 loaded_def_tags.append(str(def_tag))
                 loaded_def_inds.add((word_path, def_ind, example_ind_start, num_examples))
