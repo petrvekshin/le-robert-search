@@ -2,7 +2,7 @@
 
 ## How to use it
 
-To determine the word sense, enter your French text in the textbox on the left side of the page. Select the model for computing contextual embeddings and choose the word you want to find the sense for. Relevant definitions with example sentences will appear on the right side. The word with an example sentence is highlighted based on the cosine similarity score. The GIF image below demonstrates how the scores change depending on the sense of the word "langue".
+To determine the word sense, enter your French text in the textbox on the left side of the page. Select the model for computing contextual embeddings and choose the word you want to find the sense for. Relevant definitions with example sentences will appear on the right side. Words in example sentences are highlighted based on their cosine similarity scores. The GIF image below demonstrates how the scores change depending on the sense of the word "langue".
 
 ![](./images/le-robert-search.gif)
 
