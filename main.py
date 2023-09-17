@@ -24,7 +24,8 @@ with open('./assets/word_map.json', 'r', encoding='utf-8') as f:
 
 tagger = ttpw.TreeTagger(TAGLANG='fr')
 
-model_names = ["sentence-transformers/paraphrase-multilingual-mpnet-base-v2",
+model_names = ["intfloat/multilingual-e5-large",
+               "sentence-transformers/paraphrase-multilingual-mpnet-base-v2",
                "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"]
 tokenizers = []
 models = []
